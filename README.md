@@ -40,7 +40,7 @@ Reserved for proprietary use of the card issuer
 | Field Separator                     | one character (generally '^') |
 | Expiration date                     | four characters in the form YYMM. |
 | Service code                        | three characters |
-| Discretionary data                  | may include Pin Verification Key Indicator (PVKI, 1 character), PIN Verification Value (PVV, 4 characters), Card Verification Value or Card Verification Code (CVV or CVC, 3 characters) |
+| Discretionary data                  | may include Pin Verification Key Indicator *(PVKI, 1 character)*, PIN Verification Value *(PVV, 4 characters)*, Card Verification Value or Card Verification Code *(CVV or CVC, 3 characters)* |
 | End sentine                         | one character (generally '?')                                                        |
 | Longitudinal redundancy check (LRC) | it is one character and a validity character calculated from other data on the track |
 
@@ -57,9 +57,9 @@ This format was developed by the banking industry *(ABA)*. This track is written
 
 | Item                                | Description |
 | ----------------------------------- | ----------- |
-| Start sentinel                      | one character (generally ';') |
-| Primary account number (PAN)        | up to 19 characters. Usually, but not always, matches the credit card number printed on the front of the card. |
-| Separator                           | one character (generally '=') |
+| Start sentinel                      | 1 byte *(the ; character)*   |
+| Primary account number (PAN)        | up to 19 characters *(may contain spaces sometimes)* |
+| Separator                           | 1 byte *(the = character)*  |
 | Expiration date                     | four characters in the form YYMM. |
 | Service code                        | three digits. The first digit specifies the interchange rules, the second specifies authorization processing and the third specifies the range of services |
 | Discretionary data                  | as in track one |
