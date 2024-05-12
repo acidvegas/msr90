@@ -49,9 +49,9 @@ def parse_magnetic_stripe(data: str):
 	service_code   = track1.group(5)
 
 	service_code_description = [
-		f'{service_code[0]} - {service_code_values.get(service_code[0], 'Unknown')}',
-		f'{service_code[1]} - {service_code_values.get(service_code[1], 'Unknown')}',
-		f'{service_code[2]} - {service_code_values.get(service_code[2], 'Unknown')}'
+		f'{service_code[0]} - {service_code_values.get(service_code[0], \'Unknown\')}',
+		f'{service_code[1]} - {service_code_values.get(service_code[1], \'Unknown\')}',
+		f'{service_code[2]} - {service_code_values.get(service_code[2], \'Unknown\')}'
 	]
 
 	format_code_description = format_code_values.get(format_code, 'Unknown')
