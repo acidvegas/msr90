@@ -18,58 +18,43 @@ Let's hope we don't get Banned 🤷
 To my suprise, most of these card readers act as an HID that mimics a keyboard. Simply put, you swipe a card and it types the data out that is on the magnetic strip. Also to my suprise these work out of the box on Linux & Android systems.
 
 ## Financial Cards
-
-There are up to three tracks on magnetic cards known as tracks 1, 2, and 3. Track 3 is virtually unused by the major worldwide networks, and often is not even physically present on the card by virtue of a narrower magnetic stripe. Point-of-sale card readers almost always read track 1, or track 2, and sometimes both, in case one track is unreadable. The minimum cardholder account information needed to complete a transaction is present on both tracks. Track 1 has a higher bit density *(210 bits per inch vs. 75)*, is the only track that may contain alphabetic text, and hence is the only track that contains the cardholder's name. 
+These follow the ISO/IEC 7813 standard which define the properties of financial transaction cards.
 
 ### Track 1
-Track 1 is written with code known as DEC SIXBIT plus odd parity.
-
 ![](./.screens/track1.png)
 
-###### Format A
-Reserved for proprietary use of the card issuer
+Track 1 is written with code known as DEC SIXBIT plus odd parity.
 
-###### Format B
-| Item                                | Description                                          |
-| ----------------------------------- | ---------------------------------------------------- |
-| Start sentinel                      | 1 byte *(the % character)*                           |
-| Format code                         | 1 byte alpha                                         |
-| Primary account number (PAN)        | up to 19 characters *(may contain spaces sometimes)* |
-| Field Separator                     | 1 byte *(the ^ character)*                           |
-| Name                                | 2 to 26 characters, surnames separated by space if necessary, Surname separator: / |
-| Field Separator                     | one character (generally '^') |
-| Expiration date                     | four characters in the form YYMM. |
-| Service code                        | three characters |
-| Discretionary data                  | may include Pin Verification Key Indicator *(PVKI, 1 character)*, PIN Verification Value *(PVV, 4 characters)*, Card Verification Value or Card Verification Code *(CVV or CVC, 3 characters)* |
-| End sentine                         | one character (generally '?')                                                        |
-| Longitudinal redundancy check (LRC) | it is one character and a validity character calculated from other data on the track |
+It can contain up to 79 characters.
 
-###### Format C-M
-Reserved for use by ANSI Subcommittee X3B10
+Most bank cards are using format B
 
-###### Format N-Z
-Available for use by individual card issuers
+###### Additional un-common formats
+| Format | Description                                     |
+| ------ | ----------------------------------------------- |
+| A      | Reserved for proprietary use of the card issuer |
+| C-M    | Reserved for use by ANSI Subcommittee X3B10     |
+| N-Z    | Available for use by individual card issuers    |
+
+###### Example data
+```
+%B4815881002867896^YATES/EUGENE JOHN         ^37829821000123456789?
+%B4815881002861896^YATES/EUGENE L            ^^^356858      00998000000? 
+```
 
 ### Track 2
-This format was developed by the banking industry *(ABA)*. This track is written with a 5-bit scheme *(4 data bits + 1 parity)*, which allows for 16 possible characters, which are the numbers 0–9, plus the six characters  : ; < = > ? . *(ASCII range 0x30 through 0x3f)*
-
 ![](./.screens/track2.png)
 
-| Item                                | Description |
-| ----------------------------------- | ----------- |
-| Start sentinel                      | 1 byte *(the ; character)*   |
-| Primary account number (PAN)        | up to 19 characters *(may contain spaces sometimes)* |
-| Separator                           | 1 byte *(the = character)*  |
-| Expiration date                     | four characters in the form YYMM. |
-| Service code                        | three digits. The first digit specifies the interchange rules, the second specifies authorization processing and the third specifies the range of services |
-| Discretionary data                  | as in track one |
-| End sentinel                        | one character (generally '?') |
-| Longitudinal redundancy check (LRC) | it is one character and a validity character calculated from other data on the track. Most reader devices do not make the LRC available for display, but use it to verify the input internally to the device. |
+It can contain up to 40 characters.
 
 ### Track 3
 ![](./.screens/track3.png)
 
-#### Service Code
+It can contain up to 107 characters *(same density as track 1 but has the same character encoding as track 2)*
+
+Most cards do not even use a 3rd track, and is mostly un-used worldwide.
+
+### Service Code
 ###### First digit
 | Code | Description                                                                                |
 | ---- | ------------------------------------------------------------------------------------------ |
@@ -99,9 +84,38 @@ This format was developed by the banking industry *(ABA)*. This track is written
 | 6    | No restrictions, use PIN where feasible                     |
 | 7    | Goods and services only *(no cash)*, use PIN where feasible |
 
+### Major Industry Identifier *(MII)*
+| Number | Description                                                                                                              |
+| ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| 0      | ISO/TC 68 and other industry assignments                                                                                 |
+| 1      | Airlines                                                                                                                 |
+| 2      | Airlines, financial and other future industry assignments                                                                |
+| 3      | Travel and entertainment                                                                                                 |
+| 4      | Banking and financial                                                                                                    |
+| 5      | Banking and financial                                                                                                    |
+| 6      | Merchandising and banking/financial                                                                                      |
+| 7      | Petroleum and other future industry assignments                                                                          |
+| 8      | Healthcare, telecommunications and other future industry assignments                                                     |
+| 9      | For assignment by national standards bodies *(next 3 digits are [ISO 3166-1](https://en.wikipedia.org/wiki/ISO_3166-1))* |
+
+### Issuer Identification Number *(IIN)*
+| Issuer                    | INN Range                       | PAN Digits |
+| ------------------------- | ------------------------------- | ---------- |
+| American Express          | 34-37                           | 15         |
+| China Union Pay           | 62                              | 16-19      |
+| Diners Club International | 36, 38, 39, 309, 300-3005       | 14         |
+| Discover                  | 65, 644-649, 6011 622126-622925 | 16, 19     |
+| JCB                       | 3528-3589                       | 16         |
+| Maestro                   | 50, 56-69                       | 12-19      |
+| Mastercard                | 51-55, 2221-2720                | 16         |
+| RuPay                     | 607                             | 16         |
+| Visa                      | 4                               | 12, 16, 19 |
+
 ## References
 - [Digital Card](https://en.wikipedia.org/wiki/Digital_card)
 - [Magnetic Stripe Card Standards](https://www.magtek.com/content/documentationfiles/d99800004.pdf)
+- [ISO/IEC 7813](https://en.wikipedia.org/wiki/ISO/IEC_7813)
+- [ISO/IEC 7812](https://en.wikipedia.org/wiki/ISO/IEC_7812)
 ___
 
 ###### Mirrors for this repository: [acid.vegas](https://git.acid.vegas/msr90) • [SuperNETs](https://git.supernets.org/acidvegas/msr90) • [GitHub](https://github.com/acidvegas/msr90) • [GitLab](https://gitlab.com/acidvegas/msr90) • [Codeberg](https://codeberg.org/acidvegas/msr90)

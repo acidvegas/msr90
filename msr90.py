@@ -81,6 +81,10 @@ def parse_magnetic_stripe(data: str):
 	:param data: The raw magnetic stripe data to parse
 	'''
 
+	# https://en.wikipedia.org/wiki/ISO/IEC_7813#Programming
+	# ^%B([0-9]{1,19})\^([^\^]{2,26})\^([0-9]{4}|\^)([0-9]{3}|\^)([^\?]*)\?$
+	# ^\;([0-9]{1,19})\=([0-9]{4}|\=)([0-9]{3}|\=)([^\?]*)\?$ 
+
 	track1_match = re.search(r'^%([AB])(\d{1,19})\^([^\^]{2,26})\^(\d{4})(\d{3})([^\?]*?)\?(\w?)', data)
 	track2_match = re.search(r';(\d{1,19})=(\d{4})(\d{3})(.*?)\?$', data)
 	track3_match = re.search(r'(\+[^\?]+\?)', data)
