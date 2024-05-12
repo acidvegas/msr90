@@ -1,76 +1,168 @@
 #!/usr/bin/env python
-# MSR90 Card Reader - Developed by acidvegas in Python (https://acid.vegas/msr90)
+# MSR90 Magnetic Stripe Reader - Developed by acidvegas in Python (https://git.acid.vegas/msr90)
 
+import getpass
 import re
+import sys
 
-# ANSI Escape Codes
-YELLOW = '\033[93m'
-RESET  = '\033[0m'
 
-# Numeric values for the service code
-service_code_values = {
-	'0': 'No restrictions and PIN required.',
-	'1': 'No restrictions.',
-	'2': 'Goods and services only (no cash).',
-	'3': 'ATM only and PIN required.',
-	'4': 'Cash only.',
-	'5': 'Goods and services only (no cash), PIN required.',
-	'6': 'No restrictions, use of PIN depends on issuers requirements.',
-	'7': 'Goods and services only, use of PIN depends on issuers requirements.'
-}
+def format_pan(pan: str) -> str:
+    '''
+    Format the Primary Account Number (PAN) by grouping the digits in sets of 4
+    
+    :param pan: The Primary Account Number (PAN) to format
+    '''
 
-# Description of the format code
-format_code_values = {
-	'A': 'Reserved for proprietary use of the card issuer.',
-	'B': 'Used by financial and credit card systems.'
-}
+    return ' '.join(pan[i:i+4] for i in range(0, len(pan), 4))
+
+
+def format_exp_date(exp_date: str) -> str:
+    '''
+    Format the expiration date by to be MM/YY
+    
+    :param exp_date: The expiration date to format'''
+
+    return exp_date[2:4] + '/' + exp_date[0:2]
+
+
+def service_code_descriptions(digit, code):
+    '''
+    Get the description for the service code digit
+    
+    :param digit: The digit number (1, 2, or 3)
+    :param code: The code value for the digit
+    '''
+
+    descriptions = {
+        '1': {
+            '1': 'International interchange OK',
+            '2': 'International interchange, use IC (chip) where feasible',
+            '5': 'National interchange only except under bilateral agreement',
+            '6': 'National interchange only, use IC (chip) where feasible',
+            '7': 'No interchange except under bilateral agreement (closed loop)',
+            '9': 'Test'
+        },
+        '2': {
+            '0': 'Normal',
+            '2': 'Contact issuer via online means',
+            '4': 'Contact issuer via online means except under bilateral agreement'
+        },
+        '3': {
+            '0': 'No restrictions, PIN required',
+            '1': 'No restrictions',
+            '2': 'Goods and services only (no cash)',
+            '3': 'ATM only, PIN required',
+            '4': 'Cash only',
+            '5': 'Goods and services only (no cash), PIN required',
+            '6': 'No restrictions, use PIN where feasible',
+            '7': 'Goods and services only (no cash), use PIN where feasible'
+        }
+    }
+
+    return descriptions[str(digit)].get(code, 'Unknown')
+
 
 def parse_magnetic_stripe(data: str):
-	'''
-	Parse the raw data from the magnetic stripe of a card.
+    '''
+    Parse the magnetic stripe data and print the results
+    
+    :param data: The raw magnetic stripe data to parse
+    '''
 
-	:param data: Raw data from the magnetic stripe of a card.
-	'''
+    # Patterns for specific track data parsing
+    track1_pattern = r'^%([AB])(\d{1,19})\^([^\^]{2,26})\^(\d{4})(\d{3})([^\?]*?)\?(\w?)'
+    track2_pattern = r';(\d{1,19})=(\d{4})(\d{3})(.*?)\?$'
 
-	# Regex to match the track 1 and track 2 data
-	track1 = re.search(r'%([AB])(\d+)\^([^?^]+)\^(\d{4})(\d{3}).*?\?', data)
-	track2 = re.search(r';(\d+)=(\d{4})(\d{3}).*?\?', data)
+    # Generic patterns to capture raw data if specific parsing fails
+    generic_track1_pattern = r'(%[AB][^\?]+\?)'
+    generic_track2_pattern = r'(;[^\?]+\?)'
+    generic_track3_pattern = r'(\+[^\?]+\?)'
 
-	# Check if the data is valid
-	if not track1 or not track2:
-		raise ValueError('Invalid data format')
+    # Attempt to match the track data
+    track1_match = re.search(track1_pattern, data)
+    track2_match = re.search(track2_pattern, data)
+    track3_match = re.search(generic_track3_pattern, data)
 
-	# Parse the data from the track 1 and track 2
-	format_code    = track1.group(1)
-	account_number = track1.group(2)
-	name           = track1.group(3).strip()
-	expiry_date    = track1.group(4)
-	expiry_date    = f'{expiry_date[2:4]}/{expiry_date[0:2]}'
-	service_code   = track1.group(5)
+    # Track 1 specific parsing
+    if track1_match:
+        format_code, pan, name, exp_date, service_code, discretionary_data, lrc = track1_match.groups()
+        if format_code == 'A':
+            print('Error: Unsupported format code \'A\'. Exiting.')
+            sys.exit(1)
+        formatted_pan = format_pan(pan)
+        formatted_exp_date = format_exp_date(exp_date)
+        desc1 = service_code_descriptions(1, service_code[0])
+        desc2 = service_code_descriptions(2, service_code[1])
+        desc3 = service_code_descriptions(3, service_code[2])
+        print_fields('Track 1 Data', [
+            ('Format Code', f'{format_code} - Financial cards (ISO/IEC 7813)'),
+            ('Primary Account Number (PAN)', formatted_pan),
+            ('Cardholder Name', name),
+            ('Expiration Date', formatted_exp_date),
+            ('Service Code Digit 1', f'{service_code[0]}: {desc1}'),
+            ('Service Code Digit 2', f'{service_code[1]}: {desc2}'),
+            ('Service Code Digit 3', f'{service_code[2]}: {desc3}'),
+            ('Discretionary Data', discretionary_data),
+            ('LRC (optional)', lrc),
+            ('Raw Track Data', track1_match.group(0))
+        ], '\033[93m')
 
-	service_code_description = [
-		f'{service_code[0]} - {service_code_values.get(service_code[0], \'Unknown\')}',
-		f'{service_code[1]} - {service_code_values.get(service_code[1], \'Unknown\')}',
-		f'{service_code[2]} - {service_code_values.get(service_code[2], \'Unknown\')}'
-	]
+    # Fallback generic track 1
+    elif re.search(generic_track1_pattern, data):
+        print('Track 1 Data:')
+        print('Raw: ' + re.search(generic_track1_pattern, data).group(1))
 
-	format_code_description = format_code_values.get(format_code, 'Unknown')
+    print('\n')
 
-	# Print the parsed data
-	print(f'{YELLOW}Name            :{RESET} {name}')
-	print(f'{YELLOW}Account Number  :{RESET} {account_number}')
-	print(f'{YELLOW}Expiration Date :{RESET} {expiry_date}')
-	print(f'{YELLOW}Service Code    :{RESET} {service_code}')
-	for item in service_code_description:
-		print(' '*18 + item)
-	print(f'{YELLOW}Format Code     :{RESET} {format_code} ({format_code_description})')
-	print(f'{YELLOW}Track 1         :{RESET} {track1.group(0)}')
-	print(f'{YELLOW}Track 2         :{RESET} {track2.group(0)}')
+    # Track 2 specific parsing
+    if track2_match:
+        pan, exp_date, service_code, discretionary_data = track2_match.groups()
+        formatted_pan = format_pan(pan)
+        formatted_exp_date = format_exp_date(exp_date)
+        print_fields('Track 2 Data', [
+            ('Primary Account Number (PAN)', formatted_pan),
+            ('Expiration Date', formatted_exp_date),
+            ('Service Code', service_code),
+            ('Discretionary Data', discretionary_data),
+            ('Raw Track Data', track2_match.group(0))
+        ], '\033[96m')
 
-def main():
-	print('Please swipe the card...')
-	data = input()
-	parse_magnetic_stripe(data)
+    # Fallback generic track 2
+    elif re.search(generic_track2_pattern, data):
+        print('Track 2 Data:')
+        print('Raw: ' + re.search(generic_track2_pattern, data).group(1))
+
+    print('\n')
+
+    # Track 3 generic data if found
+    if track3_match:
+        print('Track 3 Data:')
+        print('Raw: ' + track3_match.group(1))
+    else:
+        print('Track 3 Data: No data found.')
+
+
+def print_fields(title: str, fields: list, color_code: str):
+    '''
+    Print the fields in a formatted table
+    
+    :param title: The title of the table
+    :param fields: The fields to print
+    :param color_code: The color code to use for the table
+    '''
+
+    max_len = max(len(name) for name, _ in fields)
+
+    print(title)
+
+    for name, value in fields:
+        print(color_code + name.ljust(max_len) + '\033[90m | \033[0m' + value)
+
+
 
 if __name__ == '__main__':
-	main()
+    try:
+        swipe_data = getpass.getpass(prompt='Please swipe the card: ')
+        parse_magnetic_stripe(swipe_data)
+    except Exception as e:
+        print('Error:', e)
