@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 # MSR90 Magnetic Stripe Reader - Developed by acidvegas in Python (https://git.acid.vegas/msr90)
 
+'''
+Notes:
+	- Currently only supports reading VISA cards, will add support for Mastercard, License, Gift Cards, etc.
+'''
+
 import getpass
 import re
-import sys
 
 
 # Define ANSI color codes
@@ -91,47 +95,50 @@ def parse_magnetic_stripe(data: str):
 		desc2 = service_code_descriptions(2, service_code[1])
 		desc3 = service_code_descriptions(3, service_code[2])
 		print('Track 1 Data:')
-		print(YELLOW + 'Format Code' + GRAY + '                  | ' + RESET + f'{format_code} - Financial cards (ISO/IEC 7813)')
-		print(YELLOW + 'Primary Account Number (PAN)' + GRAY + ' | ' + RESET + formatted_pan)
-		print(YELLOW + 'Cardholder Name' + GRAY + '              | ' + RESET + name)
-		print(YELLOW + 'Expiration Date' + GRAY + '              | ' + RESET + formatted_exp_date)
-		print(YELLOW + 'Service Code Digit 1' + GRAY + '         | ' + RESET + f'{service_code[0]}: {desc1}')
-		print(YELLOW + 'Service Code Digit 2' + GRAY + '         | ' + RESET + f'{service_code[1]}: {desc2}')
-		print(YELLOW + 'Service Code Digit 3' + GRAY + '         | ' + RESET + f'{service_code[2]}: {desc3}')
-		print(YELLOW + 'Discretionary Data' + GRAY + '           | ' + RESET + discretionary_data)
-		print(YELLOW + 'LRC (optional)' + GRAY + '               | ' + RESET + lrc)
-		print(YELLOW + 'Raw Track Data' + GRAY + '               | ' + RESET + track1_match.group(0))
+		print(f'{YELLOW}Format Code                  {GRAY}|{RESET} {format_code} - Financial cards (ISO/IEC 7813)')
+		print(f'{YELLOW}Primary Account Number (PAN) {GRAY}|{RESET} {formatted_pan}')
+		print(f'{YELLOW}Cardholder Name              {GRAY}|{RESET} {name}')
+		print(f'{YELLOW}Expiration Date              {GRAY}|{RESET} {formatted_exp_date}')
+		print(f'{YELLOW}Service Code Digit 1         {GRAY}|{RESET} {service_code[0]}: {desc1}')
+		print(f'{YELLOW}Service Code Digit 2         {GRAY}|{RESET} {service_code[1]}: {desc2}')
+		print(f'{YELLOW}Service Code Digit 3         {GRAY}|{RESET} {service_code[2]}: {desc3}')
+		print(f'{YELLOW}Discretionary Data           {GRAY}|{RESET} {discretionary_data}')
+		print(f'{YELLOW}LRC (optional)               {GRAY}|{RESET} {lrc}')
+		print(f'{YELLOW}Raw Track Data               {GRAY}|{RESET} {track1_match.group(0)}')
 	else:
-		generic_track1 = re.search(r'(%[AB][^\?]+\?)', data)
-		print('Track 1 Data:')
-		print('Raw                          | ' + (generic_track1.group(1) if generic_track1 else 'No data found'))
+		generic_track1 = re.search(r'(%[^?]+\?)', data)
+		if generic_track1:
+			print('Track 1 Data:')
+			print(f'{YELLOW}Raw Track Data               {GRAY}|{RESET}' + generic_track1.group(1))
+		else:
+			raise ValueError(f'Track 1 data is not found (data: {data})')
 
 	if track2_match:
 		pan, exp_date, service_code, discretionary_data = track2_match.groups()
 		formatted_pan = format_pan(pan)
 		formatted_exp_date = format_exp_date(exp_date)
 		print('Track 2 Data:')
-		print(CYAN + 'Primary Account Number (PAN)' + GRAY + ' | ' + RESET + formatted_pan)
-		print(CYAN + 'Expiration Date' + GRAY + '              | ' + RESET + formatted_exp_date)
-		print(CYAN + 'Service Code' + GRAY + '                 | ' + RESET + service_code)
-		print(CYAN + 'Discretionary Data' + GRAY + '           | ' + RESET + discretionary_data)
-		print(CYAN + 'Raw Track Data' + GRAY + '               | ' + RESET + track2_match.group(0))
+		print(f'{CYAN}Primary Account Number (PAN)  {GRAY}|{RESET} {formatted_pan}')
+		print(f'{CYAN}Expiration Date               {GRAY}|{RESET} {formatted_exp_date}')
+		print(f'{CYAN}Service Code                  {GRAY}|{RESET} {service_code}')
+		print(f'{CYAN}Discretionary Data            {GRAY}|{RESET} {discretionary_data}')
+		print(f'{CYAN}Raw Track Data                {GRAY}|{RESET} {track2_match.group(0)}')
 	else:
 		generic_track2 = re.search(r'(;[^\?]+\?)', data)
-		print('Track 2 Data:')
-		print('Raw                          | ' + (generic_track2.group(1) if generic_track2 else 'No data found'))
+		if generic_track2:
+			print('Track 2 Data:')
+			print(f'{CYAN}Raw Track Data                {GRAY}|{RESET}' + generic_track2.group(1))
+		else:
+			raise ValueError(f'Track 2 data is not found (data: {data})')
 
 	if track3_match:
 		print('Track 3 Data:')
-		print(f'Raw                          | {track3_match.group(1)}')
+		print(f'{GRAY}Raw Track Data                {GRAY}|{RESET} {track3_match.group(0)}')
 	else:
-		print('Track 3 Data: No data found.')
+		raise ValueError(f'Track 3 data is not found (data: {data})')
 
 
 
 if __name__ == '__main__':
-	try:
-		swipe_data = getpass.getpass(prompt='Please swipe the card: ')
-		parse_magnetic_stripe(swipe_data)
-	except Exception as e:
-		print('Error:', e)
+	swipe_data = getpass.getpass(prompt='Please swipe the card: ')
+	parse_magnetic_stripe(swipe_data)
