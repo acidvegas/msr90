@@ -99,17 +99,22 @@ Most cards do not even use a 3rd track, and is mostly un-used worldwide.
 | 9      | For assignment by national standards bodies *(next 3 digits are [ISO 3166-1](https://en.wikipedia.org/wiki/ISO_3166-1))* |
 
 ### Issuer Identification Number *(IIN)*
-| Issuer                    | INN Range                       | PAN Digits |
-| ------------------------- | ------------------------------- | ---------- |
-| American Express          | 34-37                           | 15         |
-| China Union Pay           | 62                              | 16-19      |
-| Diners Club International | 36, 38, 39, 309, 300-3005       | 14         |
-| Discover                  | 65, 644-649, 6011 622126-622925 | 16, 19     |
-| JCB                       | 3528-3589                       | 16         |
-| Maestro                   | 50, 56-69                       | 12-19      |
-| Mastercard                | 51-55, 2221-2720                | 16         |
-| RuPay                     | 607                             | 16         |
-| Visa                      | 4                               | 12, 16, 19 |
+| Issuer                    | INN Range                        | PAN Digits |
+| ------------------------- | -------------------------------- | ---------- |
+| American Express          | 34-37                            | 15         |
+| China Union Pay           | 62                               | 16-19      |
+| Diners Club International | 36, 38, 39, 309, 300-3005        | 14         |
+| Discover                  | 65, 644-649, 6011, 622126-622925 | 16, 19     |
+| JCB                       | 3528-3589                        | 16         |
+| Maestro                   | 50, 56-69                        | 12-19      |
+| Mastercard                | 51-55, 2221-2720                 | 16         |
+| RuPay                     | 607                              | 16         |
+| Visa                      | 4                                | 12, 16, 19 |
+
+## Notes
+The [Luhn Algorithm](https://en.wikipedia.org/wiki/Luhn_algorithm) or modulo-10 Algorithm *([example python code](./luhn_algo.py))* is used to determine the last digit of the account number, also known as the Check Number.
+
+This number should be divisible by 10, hence "modulo-10" ;)
 
 ## References
 - [Digital Card](https://en.wikipedia.org/wiki/Digital_card)
