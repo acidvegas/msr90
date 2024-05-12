@@ -6,6 +6,13 @@ import re
 import sys
 
 
+# Define ANSI color codes
+YELLOW = '\033[93m'
+CYAN   = '\033[96m'
+GRAY   = '\033[90m'
+RESET  = '\033[0m'
+
+
 def format_pan(pan: str) -> str:
 	'''
 	Format the Primary Account Number (PAN) by grouping the digits in sets of 4
@@ -18,14 +25,15 @@ def format_pan(pan: str) -> str:
 
 def format_exp_date(exp_date: str) -> str:
 	'''
-	Format the expiration date by to be MM/YY
+	Format the expiration date to be MM/YY
 
-	:param exp_date: The expiration date to format'''
+	:param exp_date: The expiration date to format
+	'''
 
 	return exp_date[2:4] + '/' + exp_date[0:2]
 
 
-def service_code_descriptions(digit, code):
+def service_code_descriptions(digit: int, code: str) -> str:
 	'''
 	Get the description for the service code digit
 
@@ -69,94 +77,55 @@ def parse_magnetic_stripe(data: str):
 	:param data: The raw magnetic stripe data to parse
 	'''
 
-	# Patterns for specific track data parsing
-	track1_pattern = r'^%([AB])(\d{1,19})\^([^\^]{2,26})\^(\d{4})(\d{3})([^\?]*?)\?(\w?)'
-	track2_pattern = r';(\d{1,19})=(\d{4})(\d{3})(.*?)\?$'
+	track1_match = re.search(r'^%([AB])(\d{1,19})\^([^\^]{2,26})\^(\d{4})(\d{3})([^\?]*?)\?(\w?)', data)
+	track2_match = re.search(r';(\d{1,19})=(\d{4})(\d{3})(.*?)\?$', data)
+	track3_match = re.search(r'(\+[^\?]+\?)', data)
 
-	# Generic patterns to capture raw data if specific parsing fails
-	generic_track1_pattern = r'(%[AB][^\?]+\?)'
-	generic_track2_pattern = r'(;[^\?]+\?)'
-	generic_track3_pattern = r'(\+[^\?]+\?)'
-
-	# Attempt to match the track data
-	track1_match = re.search(track1_pattern, data)
-	track2_match = re.search(track2_pattern, data)
-	track3_match = re.search(generic_track3_pattern, data)
-
-	# Track 1 specific parsing
 	if track1_match:
 		format_code, pan, name, exp_date, service_code, discretionary_data, lrc = track1_match.groups()
 		if format_code == 'A':
-			print('Error: Unsupported format code \'A\'. Exiting.')
-			sys.exit(1)
+			raise ValueError('Track 1 data is using format code A which is not supported')
 		formatted_pan = format_pan(pan)
 		formatted_exp_date = format_exp_date(exp_date)
 		desc1 = service_code_descriptions(1, service_code[0])
 		desc2 = service_code_descriptions(2, service_code[1])
 		desc3 = service_code_descriptions(3, service_code[2])
-		print_fields('Track 1 Data', [
-			('Format Code', f'{format_code} - Financial cards (ISO/IEC 7813)'),
-			('Primary Account Number (PAN)', formatted_pan),
-			('Cardholder Name', name),
-			('Expiration Date', formatted_exp_date),
-			('Service Code Digit 1', f'{service_code[0]}: {desc1}'),
-			('Service Code Digit 2', f'{service_code[1]}: {desc2}'),
-			('Service Code Digit 3', f'{service_code[2]}: {desc3}'),
-			('Discretionary Data', discretionary_data),
-			('LRC (optional)', lrc),
-			('Raw Track Data', track1_match.group(0))
-		], '\033[93m')
-
-	# Fallback generic track 1
-	elif re.search(generic_track1_pattern, data):
 		print('Track 1 Data:')
-		print('Raw: ' + re.search(generic_track1_pattern, data).group(1))
+		print(YELLOW + 'Format Code' + GRAY + '                  | ' + RESET + f'{format_code} - Financial cards (ISO/IEC 7813)')
+		print(YELLOW + 'Primary Account Number (PAN)' + GRAY + ' | ' + RESET + formatted_pan)
+		print(YELLOW + 'Cardholder Name' + GRAY + '              | ' + RESET + name)
+		print(YELLOW + 'Expiration Date' + GRAY + '              | ' + RESET + formatted_exp_date)
+		print(YELLOW + 'Service Code Digit 1' + GRAY + '         | ' + RESET + f'{service_code[0]}: {desc1}')
+		print(YELLOW + 'Service Code Digit 2' + GRAY + '         | ' + RESET + f'{service_code[1]}: {desc2}')
+		print(YELLOW + 'Service Code Digit 3' + GRAY + '         | ' + RESET + f'{service_code[2]}: {desc3}')
+		print(YELLOW + 'Discretionary Data' + GRAY + '           | ' + RESET + discretionary_data)
+		print(YELLOW + 'LRC (optional)' + GRAY + '               | ' + RESET + lrc)
+		print(YELLOW + 'Raw Track Data' + GRAY + '               | ' + RESET + track1_match.group(0))
+	else:
+		generic_track1 = re.search(r'(%[AB][^\?]+\?)', data)
+		print('Track 1 Data:')
+		print('Raw                          | ' + (generic_track1.group(1) if generic_track1 else 'No data found'))
 
-	print('\n')
-
-	# Track 2 specific parsing
 	if track2_match:
 		pan, exp_date, service_code, discretionary_data = track2_match.groups()
 		formatted_pan = format_pan(pan)
 		formatted_exp_date = format_exp_date(exp_date)
-		print_fields('Track 2 Data', [
-			('Primary Account Number (PAN)', formatted_pan),
-			('Expiration Date', formatted_exp_date),
-			('Service Code', service_code),
-			('Discretionary Data', discretionary_data),
-			('Raw Track Data', track2_match.group(0))
-		], '\033[96m')
-
-	# Fallback generic track 2
-	elif re.search(generic_track2_pattern, data):
 		print('Track 2 Data:')
-		print('Raw: ' + re.search(generic_track2_pattern, data).group(1))
+		print(CYAN + 'Primary Account Number (PAN)' + GRAY + ' | ' + RESET + formatted_pan)
+		print(CYAN + 'Expiration Date' + GRAY + '              | ' + RESET + formatted_exp_date)
+		print(CYAN + 'Service Code' + GRAY + '                 | ' + RESET + service_code)
+		print(CYAN + 'Discretionary Data' + GRAY + '           | ' + RESET + discretionary_data)
+		print(CYAN + 'Raw Track Data' + GRAY + '               | ' + RESET + track2_match.group(0))
+	else:
+		generic_track2 = re.search(r'(;[^\?]+\?)', data)
+		print('Track 2 Data:')
+		print('Raw                          | ' + (generic_track2.group(1) if generic_track2 else 'No data found'))
 
-	print('\n')
-
-	# Track 3 generic data if found
 	if track3_match:
 		print('Track 3 Data:')
-		print('Raw: ' + track3_match.group(1))
+		print(f'Raw                          | {track3_match.group(1)}')
 	else:
 		print('Track 3 Data: No data found.')
-
-
-def print_fields(title: str, fields: list, color_code: str):
-	'''
-	Print the fields in a formatted table
-
-	:param title: The title of the table
-	:param fields: The fields to print
-	:param color_code: The color code to use for the table
-	'''
-
-	max_len = max(len(name) for name, _ in fields)
-
-	print(title)
-
-	for name, value in fields:
-		print(color_code + name.ljust(max_len) + '\033[90m | \033[0m' + value)
 
 
 
