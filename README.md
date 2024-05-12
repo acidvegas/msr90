@@ -66,6 +66,9 @@ This format was developed by the banking industry *(ABA)*. This track is written
 | End sentinel                        | one character (generally '?') |
 | Longitudinal redundancy check (LRC) | it is one character and a validity character calculated from other data on the track. Most reader devices do not make the LRC available for display, but use it to verify the input internally to the device. |
 
+### Track 3
+![](./.screens/track3.png)
+
 #### Service Code
 ###### First digit
 | Code | Description                                                                                |
@@ -95,6 +98,10 @@ This format was developed by the banking industry *(ABA)*. This track is written
 | 5    | Goods and services only *(no cash)*, PIN required           |
 | 6    | No restrictions, use PIN where feasible                     |
 | 7    | Goods and services only *(no cash)*, use PIN where feasible |
+
+## References
+- [Digital Card](https://en.wikipedia.org/wiki/Digital_card)
+- [Magnetic Stripe Card Standards](https://www.magtek.com/content/documentationfiles/d99800004.pdf)
 ___
 
 ###### Mirrors for this repository: [acid.vegas](https://git.acid.vegas/msr90) • [SuperNETs](https://git.supernets.org/acidvegas/msr90) • [GitHub](https://github.com/acidvegas/msr90) • [GitLab](https://gitlab.com/acidvegas/msr90) • [Codeberg](https://codeberg.org/acidvegas/msr90)
